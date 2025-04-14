@@ -2,25 +2,37 @@
 include 'db.php';
 
 if ($_SERVER["REQUEST_METHOD"] == "POST") {
-    $username = $_POST['username']; 
+    $username = trim($_POST['username']); 
     $password = $_POST['password']; 
-    $hashed_password = password_hash($password, PASSWORD_DEFAULT);
 
+    if (empty($username) || empty($password)) {
+        echo "Gebruikersnaam en wachtwoord zijn verplicht!";
+        exit();
+    }
 
-    $sql = "SELECT * FROM users WHERE username='$username'";
-    $result = $conn->query($sql);
+    $stmt = $conn->prepare("SELECT * FROM users WHERE username = ?");
+    $stmt->bind_param("s", $username);
+    $stmt->execute();
+    $result = $stmt->get_result();
+
     if ($result && $result->num_rows > 0) {
-        echo "Deze gebruikersnaam is al in gebruik!";
+        echo "Ongeldige gebruikersnaam!";
         exit();
     }
 
 
-    $sql = "INSERT INTO users (username, password) VALUES ('$username', '$password')"; 
-    if ($conn->query($sql) === TRUE) {
+    $hashed_password = password_hash($password, PASSWORD_DEFAULT);
+
+    $stmt = $conn->prepare("INSERT INTO users (username, password) VALUES (?, ?)");
+    $stmt->bind_param("ss", $username, $hashed_password);
+
+    if ($stmt->execute()) {
         echo "Registratie succesvol! <a href='index.php'>Login hier</a>";
     } else {
-        echo "Fout: " . $conn->error;
+        echo "Fout: " . $stmt->error;
     }
+
+    $stmt->close();
 }
 ?>
 
