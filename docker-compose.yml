@@ -1,0 +1,36 @@
+version: '3.8'
+
+services:
+  php-apache:
+    build: .
+    container_name: login-php-apache
+    ports:
+      - "8080:80"
+    volumes:
+      - ./www:/var/www/html/
+    depends_on:
+      - mysql
+    networks:
+      - internal   # <-- toevoegen hier
+
+  mysql:
+    image: mysql:5.7
+    container_name: login-mysql
+    restart: always
+    environment:
+      MYSQL_ROOT_PASSWORD: root
+      MYSQL_DATABASE: login_project
+      MYSQL_USER: user
+      MYSQL_PASSWORD: userpass
+    volumes:
+      - mysql-data:/var/lib/mysql
+      - ./mysql-init:/docker-entrypoint-initdb.d
+    networks:
+      - internal   # <-- toevoegen hier ook
+
+volumes:
+  mysql-data:
+
+networks:
+  internal:       # <-- DIT was wat miste
+    driver: bridge
